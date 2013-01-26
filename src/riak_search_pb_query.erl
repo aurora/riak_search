@@ -95,8 +95,15 @@ run_query(Client, Schema, SQuery, QueryOps, FilterOps, Presort, FL, Sort) ->
     {_Time, NumFound, MaxScore, DocsOrIDs} =
         riak_search_utils:run_query(Client, Schema, SQuery, QueryOps,
                                     FilterOps, Presort, FL),
-    SortedDocs = riak_solr_sort:sort(DocsOrIDs, binary_to_list(Sort), Schema),
-    {NumFound, MaxScore, SortedDocs}.
+
+    case DocsOrIDs of
+        {ids, _} ->
+            {NumFound, MaxScore, DocsOrIDs};
+        {docs, Docs} ->
+            SortedDocs = riak_solr_sort:sort(Docs, binary_to_list(Sort), Schema),
+            
+            {NumFound, MaxScore, {docs, SortedDocs}}
+    end.
 
 encode_results({NumFound, MaxScore, {ids, IDs}}, UK, _FL) ->
     #rpbsearchqueryresp{
